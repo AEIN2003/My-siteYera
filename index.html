@@ -1,12 +1,137 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Мой сайт</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Живые слова</title>
+<style>
+  :root { --bg:#0a0f24; --ink:#eef1ff; --dim:#8d97c4; --line:#2a3566; }
+  * { box-sizing:border-box; }
+  html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
+    font-family: Georgia, "Times New Roman", serif; overflow:hidden; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  .bar { position:fixed; left:0; right:0; bottom:0; padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));
+    display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  input { font:inherit; font-size:18px; color:var(--ink); background:rgba(10,15,36,.75);
+    border:1px solid var(--line); border-radius:999px; padding:12px 20px; width:min(320px,100%);
+    outline:none; backdrop-filter:blur(6px); }
+  input:focus-visible { border-color:#7fb0ff; }
+  button { font:inherit; font-size:16px; color:var(--ink); background:rgba(10,15,36,.75);
+    border:1px solid var(--line); border-radius:999px; padding:12px 18px; cursor:pointer; backdrop-filter:blur(6px); }
+  button:hover { border-color:#7fb0ff; }
+  button:focus-visible { outline:2px solid #7fb0ff; outline-offset:2px; }
+  .hint { position:fixed; top:16px; left:0; right:0; text-align:center; color:var(--dim);
+    font-size:15px; pointer-events:none; padding:0 16px; }
+</style>
 </head>
 <body>
-  <h1>Привет! Это мой первый сайт</h1>
-  <p>Он работает через GitHub Pages.</p>
+<canvas id="c"></canvas>
+<div class="hint">Проведите пальцем или мышью по буквам. Введите своё слово внизу.</div>
+<div class="bar">
+  <input id="word" type="text" maxlength="14" placeholder="Напишите слово" value="Привет" aria-label="Слово">
+  <button id="rand">Случайное</button>
+  <button id="boom">Взрыв</button>
+</div>
+<script>
+(function () {
+  var cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  var input = document.getElementById('word');
+  var W, H, dpr, P = [], mouse = { x: -999, y: -999, down: false };
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var words = ['Мечта', 'Привет', 'Космос', 'Свет', 'Дорога', 'Огонь', 'Тишина', 'Весна', 'Идея', 'Магия'];
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    build(input.value || ' ');
+  }
+
+  // Берём пиксели нарисованного слова и превращаем их в точки-цели
+  function targets(text) {
+    var off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    var o = off.getContext('2d');
+    var size = Math.min(W / (text.length * 0.62), H * 0.38, 220);
+    o.font = 'bold ' + size + 'px Georgia, serif';
+    o.textAlign = 'center'; o.textBaseline = 'middle';
+    o.fillStyle = '#fff';
+    o.fillText(text, W / 2, H / 2 - 20);
+    var d = o.getImageData(0, 0, W, H).data, pts = [];
+    var step = W < 600 ? 5 : 6;
+    for (var y = 0; y < H; y += step)
+      for (var x = 0; x < W; x += step)
+        if (d[(y * W + x) * 4 + 3] > 128) pts.push([x, y]);
+    return pts;
+  }
+
+  function build(text) {
+    var pts = targets(text);
+    // перемешиваем, чтобы переход выглядел живым
+    for (var i = pts.length - 1; i > 0; i--) {
+      var j = (Math.random() * (i + 1)) | 0, t = pts[i]; pts[i] = pts[j]; pts[j] = t;
+    }
+    while (P.length < pts.length)
+      P.push({ x: W / 2, y: H / 2, vx: (Math.random() - .5) * 20, vy: (Math.random() - .5) * 20, tx: 0, ty: 0, a: 1 });
+    for (var k = 0; k < P.length; k++) {
+      var p = P[k];
+      if (k < pts.length) { p.tx = pts[k][0]; p.ty = pts[k][1]; p.free = false; }
+      else { p.free = true; p.tx = Math.random() * W; p.ty = Math.random() * H; }
+    }
+    P.length = Math.max(pts.length, Math.min(P.length, pts.length + 120));
+  }
+
+  function boom() {
+    for (var i = 0; i < P.length; i++) {
+      var a = Math.random() * 6.283, s = 6 + Math.random() * 18;
+      P[i].vx += Math.cos(a) * s; P[i].vy += Math.sin(a) * s;
+    }
+  }
+
+  function frame(t) {
+    ctx.fillStyle = 'rgba(10,15,36,0.28)';
+    ctx.fillRect(0, 0, W, H);
+    var R = 90;
+    for (var i = 0; i < P.length; i++) {
+      var p = P[i];
+      var dx = p.tx - p.x, dy = p.ty - p.y;
+      p.vx += dx * 0.012; p.vy += dy * 0.012;
+      var mx = p.x - mouse.x, my = p.y - mouse.y, d2 = mx * mx + my * my;
+      if (d2 < R * R) {
+        var d = Math.sqrt(d2) || 1, f = (1 - d / R) * (mouse.down ? -2.2 : 3.2);
+        p.vx += (mx / d) * f; p.vy += (my / d) * f;
+      }
+      if (p.free) { p.vx += Math.sin(t / 700 + i) * 0.03; p.vy += Math.cos(t / 900 + i) * 0.03; }
+      p.vx *= 0.9; p.vy *= 0.9;
+      p.x += p.vx; p.y += p.vy;
+      var sp = Math.min(Math.abs(p.vx) + Math.abs(p.vy), 12);
+      var hue = 210 + (p.x / W) * 150 + sp * 6;
+      ctx.fillStyle = p.free ? 'hsla(' + hue + ',70%,75%,.35)' : 'hsl(' + hue + ',85%,' + (62 + sp * 2) + '%)';
+      var s = p.free ? 1.2 : 2 + sp * 0.12;
+      ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+
+  function pos(e) { var q = e.touches ? e.touches[0] : e; mouse.x = q.clientX; mouse.y = q.clientY; }
+  addEventListener('mousemove', pos);
+  addEventListener('touchmove', pos, { passive: true });
+  addEventListener('touchstart', function (e) { pos(e); mouse.down = false; }, { passive: true });
+  addEventListener('touchend', function () { mouse.x = mouse.y = -999; });
+  addEventListener('mouseleave', function () { mouse.x = mouse.y = -999; });
+  cv.addEventListener('mousedown', function () { mouse.down = true; });
+  addEventListener('mouseup', function () { mouse.down = false; });
+  input.addEventListener('input', function () { build(input.value || ' '); });
+  document.getElementById('rand').onclick = function () {
+    input.value = words[(Math.random() * words.length) | 0]; build(input.value); boom();
+  };
+  document.getElementById('boom').onclick = boom;
+  addEventListener('resize', resize);
+
+  resize();
+  if (reduce) { for (var n = 0; n < 200; n++) frame(0); } else requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>
