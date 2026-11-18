@@ -3,135 +3,188 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Живые слова</title>
+<title>Для тебя</title>
 <style>
-  :root { --bg:#0a0f24; --ink:#eef1ff; --dim:#8d97c4; --line:#2a3566; }
+  :root { --bg1:#2a0f1e; --bg2:#4d1b30; --cream:#fbeee0; --dim:#d9b8b0; --gold:#f2b27a; --line:rgba(251,238,224,.35); }
   * { box-sizing:border-box; }
-  html,body { height:100%; margin:0; background:var(--bg); color:var(--ink);
-    font-family: Georgia, "Times New Roman", serif; overflow:hidden; }
-  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
-  .bar { position:fixed; left:0; right:0; bottom:0; padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));
-    display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
-  input { font:inherit; font-size:18px; color:var(--ink); background:rgba(10,15,36,.75);
-    border:1px solid var(--line); border-radius:999px; padding:12px 20px; width:min(320px,100%);
-    outline:none; backdrop-filter:blur(6px); }
-  input:focus-visible { border-color:#7fb0ff; }
-  button { font:inherit; font-size:16px; color:var(--ink); background:rgba(10,15,36,.75);
-    border:1px solid var(--line); border-radius:999px; padding:12px 18px; cursor:pointer; backdrop-filter:blur(6px); }
-  button:hover { border-color:#7fb0ff; }
-  button:focus-visible { outline:2px solid #7fb0ff; outline-offset:2px; }
-  .hint { position:fixed; top:16px; left:0; right:0; text-align:center; color:var(--dim);
-    font-size:15px; pointer-events:none; padding:0 16px; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; color:var(--cream); font-family: Georgia, "Times New Roman", serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2) 60%,var(--bg1)); background-attachment:fixed; overflow-x:hidden; }
+  section { min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:48px 24px; gap:22px; }
+  h1 { font-size:clamp(44px,13vw,110px); font-weight:400; font-style:italic; margin:0; line-height:1.05; letter-spacing:-.02em; }
+  h2 { font-size:clamp(26px,6vw,40px); font-weight:400; margin:0; }
+  p { margin:0; font-size:clamp(17px,4.5vw,21px); line-height:1.6; max-width:34ch; color:var(--dim); }
+  button { font:inherit; font-size:18px; color:var(--cream); background:rgba(251,238,224,.08);
+    border:1px solid var(--line); border-radius:999px; padding:14px 28px; cursor:pointer; transition:background .2s, transform .2s; }
+  button:hover { background:rgba(251,238,224,.18); }
+  button:active { transform:scale(.97); }
+  button:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+  button.main { background:var(--gold); color:#3a1424; border-color:var(--gold); font-weight:700; }
+  button.main:hover { background:#f7c498; }
+  #main { display:none; }
+  .timer { display:flex; gap:clamp(12px,4vw,28px); }
+  .timer div { min-width:64px; }
+  .timer b { display:block; font-size:clamp(34px,10vw,60px); font-weight:400; color:var(--gold); font-variant-numeric:tabular-nums; }
+  .timer span { font-size:14px; color:var(--dim); }
+  .card { min-height:140px; max-width:30ch; font-size:clamp(20px,5.5vw,26px); font-style:italic; line-height:1.5; color:var(--cream); }
+  .letter { max-width:36ch; font-size:clamp(17px,4.6vw,20px); line-height:1.75; font-style:italic; text-align:left;
+    white-space:pre-wrap; min-height:12em; color:var(--cream); }
+  .row { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  .heart { position:fixed; top:-40px; pointer-events:none; z-index:9; animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(112vh) rotate(40deg); opacity:.2; } }
+  #no { transition:left .25s, top .25s; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .heart { animation-duration:.01s !important; } }
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div class="hint">Проведите пальцем или мышью по буквам. Введите своё слово внизу.</div>
-<div class="bar">
-  <input id="word" type="text" maxlength="14" placeholder="Напишите слово" value="Привет" aria-label="Слово">
-  <button id="rand">Случайное</button>
-  <button id="boom">Взрыв</button>
+
+<section id="intro">
+  <p>У меня для тебя кое-что есть</p>
+  <h1 id="name">Любимая</h1>
+  <button class="main" id="open">Открыть</button>
+</section>
+
+<div id="main">
+  <section>
+    <h2>Мы вместе уже</h2>
+    <div class="timer">
+      <div><b id="d">0</b><span>дней</span></div>
+      <div><b id="h">0</b><span>часов</span></div>
+      <div><b id="m">0</b><span>минут</span></div>
+      <div><b id="s">0</b><span>секунд</span></div>
+    </div>
+    <p>И я не хочу, чтобы эти цифры останавливались.</p>
+  </section>
+
+  <section>
+    <h2>Почему я тебя люблю</h2>
+    <div class="card" id="reason">Нажми на кнопку</div>
+    <button id="why">Ещё одна причина</button>
+  </section>
+
+  <section>
+    <h2>Письмо тебе</h2>
+    <div class="letter" id="letter"></div>
+    <button id="read">Открыть письмо</button>
+  </section>
+
+  <section id="ask">
+    <h2 id="q">Один важный вопрос</h2>
+    <p id="qsub">Ты рада, что я есть в твоей жизни?</p>
+    <div class="row">
+      <button class="main" id="yes">Да</button>
+      <button id="no">Нет</button>
+    </div>
+  </section>
 </div>
+
 <script>
-(function () {
-  var cv = document.getElementById('c'), ctx = cv.getContext('2d');
-  var input = document.getElementById('word');
-  var W, H, dpr, P = [], mouse = { x: -999, y: -999, down: false };
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var words = ['Мечта', 'Привет', 'Космос', 'Свет', 'Дорога', 'Огонь', 'Тишина', 'Весна', 'Идея', 'Магия'];
+/* ============ ИЗМЕНИТЕ ЗДЕСЬ ============ */
+var CONFIG = {
+  name: 'Любимая',            // её имя или ласковое слово
+  start: '2024-02-14T00:00:00', // дата, когда вы начали встречаться: ГГГГ-ММ-ДДTЧЧ:ММ:СС
+  reasons: [
+    'Ты улыбаешься так, что у меня пропадают все плохие мысли.',
+    'С тобой даже обычный вечер становится особенным.',
+    'Ты умеешь поддержать, когда мне тяжело.',
+    'Твой смех — мой любимый звук.',
+    'Рядом с тобой я хочу быть лучше.',
+    'Ты настоящая, и это дороже всего.',
+    'Мне просто хорошо, когда ты рядом.'
+  ],
+  letter: 'Привет, родная.\n\nЯ долго думал, как сказать тебе всё, что у меня на душе, и решил сделать этот маленький сайт.\n\nСпасибо, что ты рядом. Спасибо за твоё терпение, твоё тепло и за то, что ты принимаешь меня таким, какой я есть.\n\nЯ хочу, чтобы у нас было ещё много-много дней, и чтобы в каждом из них ты чувствовала, что тебя любят.\n\nТвой ❤',
+  yesText: 'Я так и знал. Люблю тебя!',
+  yesSub: 'Теперь ты точно моя на всю жизнь.'
+};
+/* ======================================== */
 
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight;
-    cv.width = W * dpr; cv.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    build(input.value || ' ');
+var $ = function (id) { return document.getElementById(id); };
+$('name').textContent = CONFIG.name;
+var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function hearts(n) {
+  var set = ['❤', '💗', '💖', '💕', '✨'];
+  for (var i = 0; i < n; i++) {
+    var h = document.createElement('span');
+    h.className = 'heart';
+    h.textContent = set[(Math.random() * set.length) | 0];
+    h.style.left = Math.random() * 100 + 'vw';
+    h.style.fontSize = (16 + Math.random() * 28) + 'px';
+    h.style.animationDuration = (3 + Math.random() * 3) + 's';
+    h.style.animationDelay = (Math.random() * 1.2) + 's';
+    h.addEventListener('animationend', function () { this.remove(); });
+    document.body.appendChild(h);
   }
+}
 
-  // Берём пиксели нарисованного слова и превращаем их в точки-цели
-  function targets(text) {
-    var off = document.createElement('canvas');
-    off.width = W; off.height = H;
-    var o = off.getContext('2d');
-    var size = Math.min(W / (text.length * 0.62), H * 0.38, 220);
-    o.font = 'bold ' + size + 'px Georgia, serif';
-    o.textAlign = 'center'; o.textBaseline = 'middle';
-    o.fillStyle = '#fff';
-    o.fillText(text, W / 2, H / 2 - 20);
-    var d = o.getImageData(0, 0, W, H).data, pts = [];
-    var step = W < 600 ? 5 : 6;
-    for (var y = 0; y < H; y += step)
-      for (var x = 0; x < W; x += step)
-        if (d[(y * W + x) * 4 + 3] > 128) pts.push([x, y]);
-    return pts;
-  }
+$('open').onclick = function () {
+  $('main').style.display = 'block';
+  hearts(25);
+  setTimeout(function () {
+    $('main').firstElementChild.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+  }, 50);
+};
 
-  function build(text) {
-    var pts = targets(text);
-    // перемешиваем, чтобы переход выглядел живым
-    for (var i = pts.length - 1; i > 0; i--) {
-      var j = (Math.random() * (i + 1)) | 0, t = pts[i]; pts[i] = pts[j]; pts[j] = t;
-    }
-    while (P.length < pts.length)
-      P.push({ x: W / 2, y: H / 2, vx: (Math.random() - .5) * 20, vy: (Math.random() - .5) * 20, tx: 0, ty: 0, a: 1 });
-    for (var k = 0; k < P.length; k++) {
-      var p = P[k];
-      if (k < pts.length) { p.tx = pts[k][0]; p.ty = pts[k][1]; p.free = false; }
-      else { p.free = true; p.tx = Math.random() * W; p.ty = Math.random() * H; }
-    }
-    P.length = Math.max(pts.length, Math.min(P.length, pts.length + 120));
-  }
+/* счётчик */
+var start = new Date(CONFIG.start).getTime();
+function tick() {
+  var diff = Math.max(0, Date.now() - start) / 1000;
+  $('d').textContent = Math.floor(diff / 86400);
+  $('h').textContent = Math.floor(diff % 86400 / 3600);
+  $('m').textContent = Math.floor(diff % 3600 / 60);
+  $('s').textContent = Math.floor(diff % 60);
+}
+tick(); setInterval(tick, 1000);
 
-  function boom() {
-    for (var i = 0; i < P.length; i++) {
-      var a = Math.random() * 6.283, s = 6 + Math.random() * 18;
-      P[i].vx += Math.cos(a) * s; P[i].vy += Math.sin(a) * s;
-    }
-  }
+/* причины */
+var lastR = -1;
+$('why').onclick = function () {
+  var i;
+  do { i = (Math.random() * CONFIG.reasons.length) | 0; } while (i === lastR && CONFIG.reasons.length > 1);
+  lastR = i;
+  $('reason').textContent = CONFIG.reasons[i];
+  hearts(6);
+  $('why').textContent = 'Ещё одна причина';
+};
 
-  function frame(t) {
-    ctx.fillStyle = 'rgba(10,15,36,0.28)';
-    ctx.fillRect(0, 0, W, H);
-    var R = 90;
-    for (var i = 0; i < P.length; i++) {
-      var p = P[i];
-      var dx = p.tx - p.x, dy = p.ty - p.y;
-      p.vx += dx * 0.012; p.vy += dy * 0.012;
-      var mx = p.x - mouse.x, my = p.y - mouse.y, d2 = mx * mx + my * my;
-      if (d2 < R * R) {
-        var d = Math.sqrt(d2) || 1, f = (1 - d / R) * (mouse.down ? -2.2 : 3.2);
-        p.vx += (mx / d) * f; p.vy += (my / d) * f;
-      }
-      if (p.free) { p.vx += Math.sin(t / 700 + i) * 0.03; p.vy += Math.cos(t / 900 + i) * 0.03; }
-      p.vx *= 0.9; p.vy *= 0.9;
-      p.x += p.vx; p.y += p.vy;
-      var sp = Math.min(Math.abs(p.vx) + Math.abs(p.vy), 12);
-      var hue = 210 + (p.x / W) * 150 + sp * 6;
-      ctx.fillStyle = p.free ? 'hsla(' + hue + ',70%,75%,.35)' : 'hsl(' + hue + ',85%,' + (62 + sp * 2) + '%)';
-      var s = p.free ? 1.2 : 2 + sp * 0.12;
-      ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
-    }
-    if (!reduce) requestAnimationFrame(frame);
-  }
+/* письмо с эффектом печати */
+var typing = false;
+$('read').onclick = function () {
+  if (typing) return;
+  typing = true; $('read').style.visibility = 'hidden';
+  var t = CONFIG.letter, i = 0, el = $('letter');
+  el.textContent = '';
+  if (reduce) { el.textContent = t; return; }
+  (function step() {
+    el.textContent = t.slice(0, ++i);
+    if (i < t.length) setTimeout(step, 45); else hearts(12);
+  })();
+};
 
-  function pos(e) { var q = e.touches ? e.touches[0] : e; mouse.x = q.clientX; mouse.y = q.clientY; }
-  addEventListener('mousemove', pos);
-  addEventListener('touchmove', pos, { passive: true });
-  addEventListener('touchstart', function (e) { pos(e); mouse.down = false; }, { passive: true });
-  addEventListener('touchend', function () { mouse.x = mouse.y = -999; });
-  addEventListener('mouseleave', function () { mouse.x = mouse.y = -999; });
-  cv.addEventListener('mousedown', function () { mouse.down = true; });
-  addEventListener('mouseup', function () { mouse.down = false; });
-  input.addEventListener('input', function () { build(input.value || ' '); });
-  document.getElementById('rand').onclick = function () {
-    input.value = words[(Math.random() * words.length) | 0]; build(input.value); boom();
-  };
-  document.getElementById('boom').onclick = boom;
-  addEventListener('resize', resize);
+/* убегающая кнопка «Нет» */
+var no = $('no'), tries = 0;
+var phrases = ['Нет', 'Точно?', 'Подумай ещё', 'Ну пожалуйста', 'Не получится :)'];
+function dodge(e) {
+  if (e && e.cancelable) e.preventDefault();
+  tries++;
+  no.textContent = phrases[Math.min(tries, phrases.length - 1)];
+  var r = no.getBoundingClientRect();
+  no.style.position = 'fixed';
+  no.style.left = Math.random() * (innerWidth - r.width - 20) + 10 + 'px';
+  no.style.top = Math.random() * (innerHeight - r.height - 20) + 10 + 'px';
+}
+no.addEventListener('pointerenter', dodge);
+no.addEventListener('pointerdown', dodge);
+no.addEventListener('click', dodge);
 
-  resize();
-  if (reduce) { for (var n = 0; n < 200; n++) frame(0); } else requestAnimationFrame(frame);
-})();
+$('yes').onclick = function () {
+  $('q').textContent = CONFIG.yesText;
+  $('qsub').textContent = CONFIG.yesSub;
+  no.style.display = 'none'; $('yes').style.display = 'none';
+  hearts(70);
+  setTimeout(function () { hearts(50); }, 1500);
+};
 </script>
 </body>
 </html>
